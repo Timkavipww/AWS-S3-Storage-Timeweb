@@ -1,0 +1,16 @@
+services:
+  backend:
+    container_name: aws
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    ports:
+      - 80:80
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
