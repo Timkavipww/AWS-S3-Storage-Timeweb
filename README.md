@@ -15,7 +15,7 @@ ASPNETCORE_URLS=http://+:80
 ```
 
 These variables configure access to AWS S3 (or a compatible service) and define the API's base URL.
-
+https://timeweb.cloud/my/storage
 ---
 
 ### 2. Install Required Packages
