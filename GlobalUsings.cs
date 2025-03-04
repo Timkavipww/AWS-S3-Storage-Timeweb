@@ -7,3 +7,5 @@ global using DotNetEnv;
 global using System.Net;
 global using Microsoft.AspNetCore.Mvc;
 global using Scalar.AspNetCore;
+global using SixLabors.ImageSharp;
+global using SixLabors.ImageSharp.Processing;

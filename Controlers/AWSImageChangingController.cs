@@ -1,29 +1,35 @@
+using Microsoft.AspNetCore.Mvc;
+
 namespace _dotnetaws;
 
 [Route("api/clothings")]
-public class AWSController : BaseApiController
+public class AWSImageChangingController : ControllerBase
 {
-
     private readonly AwsOptions _awsOptions;
     private readonly IAmazonS3 _s3;
-    public AWSController(IOptions<AwsOptions> options, IAmazonS3 s3)
+    public AWSImageChangingController(IOptions<AwsOptions> options, IAmazonS3 s3)
     {
         _awsOptions = options.Value;
         _s3 = s3;
     }
 
-    [HttpPost("{id}/image")]
+    [HttpPost("{id}/image/resized")]
     public async Task<ActionResult<PutObjectResponse>> Upload([FromRoute] int id,
     [FromForm(Name = "Data")] IFormFile file)
     {
-        
-        
+        using var image = await Image.LoadAsync(file.OpenReadStream());
+        image.Mutate(x => x.Resize(400, 400));
+
+        using var ms = new MemoryStream();
+        await image.SaveAsJpegAsync(ms);
+        ms.Position = 0;
+
         var request = new PutObjectRequest
         {
             BucketName = _awsOptions.BucketName,
-            Key = $"clo_images/{id}.jpg",
+            Key = $"clo_images_resized/{id}.jpg",
             ContentType = "image/jpeg",
-            InputStream = file.OpenReadStream(),
+            InputStream = ms,
         };
 
         var response =  await _s3.PutObjectAsync(request);
@@ -32,13 +38,14 @@ public class AWSController : BaseApiController
 
     }
 
-    [HttpGet("{id}/image")]
+
+     [HttpGet("{id}/image/resized")]
     public async Task<IActionResult> GetImage([FromRoute] int id)
     {
         var objectRequest = new GetObjectRequest
         {
             BucketName = _awsOptions.BucketName,
-            Key = $"clo_images/{id}.jpg"
+            Key = $"clo_images_resized/{id}.jpg"
         };
 
         var response = await _s3.GetObjectAsync(objectRequest);
@@ -49,34 +56,24 @@ public class AWSController : BaseApiController
 
     }
 
-    [HttpDelete("{id}/image")]
-    public async Task<IActionResult> DeleteImage([FromRoute] int id)
-    {
-        var objectRequest = new DeleteObjectRequest
-        {
-            BucketName = _awsOptions.BucketName,
-            Key = $"clo_images/{id}.jpg"
-        };
-        var response = await _s3.DeleteObjectAsync(objectRequest);
-        if(response.HttpStatusCode == HttpStatusCode.NoContent)
-            return NoContent();
 
-        return BadRequest();    
-
-    }
-
-    [HttpPost("{id}/others")]
-    public async Task<ActionResult<PutObjectResponse>> UploadOther([FromRoute] int id,
+    [HttpPost("{id}/image/blured")]
+    public async Task<ActionResult<PutObjectResponse>> UploadBlured([FromRoute] int id,
     [FromForm(Name = "Data")] IFormFile file)
     {
-        
-        
+        using var image = await Image.LoadAsync(file.OpenReadStream());
+        image.Mutate(x => x.BokehBlur().BackgroundColor(color:Color.Transparent));
+
+        using var ms = new MemoryStream();
+        await image.SaveAsJpegAsync(ms);
+        ms.Position = 0;
+
         var request = new PutObjectRequest
         {
             BucketName = _awsOptions.BucketName,
-            Key = $"others/{id}",
-            ContentType = file.ContentType,
-            InputStream = file.OpenReadStream(),
+            Key = $"clo_images_blured/{id}.jpg",
+            ContentType = "image/jpeg",
+            InputStream = ms,
         };
 
         var response =  await _s3.PutObjectAsync(request);
@@ -85,13 +82,13 @@ public class AWSController : BaseApiController
 
     }
 
-    [HttpGet("{id}/others")]
-    public async Task<IActionResult> GetOthers([FromRoute] int id)
+    [HttpGet("{id}/image/blured")]
+    public async Task<IActionResult> GetImageBlured([FromRoute] int id)
     {
         var objectRequest = new GetObjectRequest
         {
             BucketName = _awsOptions.BucketName,
-            Key = $"others/{id}"
+            Key = $"clo_images_blured/{id}.jpg"
         };
 
         var response = await _s3.GetObjectAsync(objectRequest);
@@ -101,6 +98,7 @@ public class AWSController : BaseApiController
         return BadRequest();
 
     }
+
 
 
 }
