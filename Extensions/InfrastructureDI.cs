@@ -4,8 +4,7 @@ public static class InfrastructureDI
 {
     public static WebApplicationBuilder AddAwsSupport(this WebApplicationBuilder builder)
     {
-        builder.Services.Configure<AWSOptions>(builder.Configuration);
-
+        
         builder.Services.AddSingleton<IAmazonS3>(sp =>
         {
             var options = sp.GetRequiredService<IOptions<AwsOptions>>().Value;
